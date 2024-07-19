@@ -1,0 +1,62 @@
+name: update version from upstream
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - automation
+
+permissions:
+  contents: write
+
+jobs:
+  update_version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: get upstream version
+        id: upstream
+        run: |
+          res=$(curl -s --url https://api.github.com/repos/rundeck/rundeck-cli/releases/latest )
+          echo "$res"
+
+          url=$(jq -r '.assets[] |  select ( .name | test( "^rd-cli-tool-shadow.*.zip$") ) | .browser_download_url' <<< "$res")
+          version=$(echo $url | sed -E 's/.*-([0-9]\.[0-9]+\.[0-9]+).*/\1/')
+
+          curl -L -o /tmp/tmp.file $url
+          sha=$(sha256sum /tmp/tmp.file | cut -d' ' -f1)
+
+          echo "✅ Found version $version: sha $sha: $url" | tee -a $GITHUB_STEP_SUMMARY
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+
+      - name: update formula
+        id: update
+        run: |
+          formula="Formula/rundeck-cli.rb"
+          sed -i'' -E 's#^VERSION = ".*"$#VERSION = "${{ steps.upstream.outputs.version }}"#' $formula
+          sed -i'' -E 's#^SHA = ".*"$#SHA = "${{ steps.upstream.outputs.sha }}"#' $formula
+
+          if [[ -z "$(git status -s $formula)" ]]; then
+            echo "✅ Already up-to-date" | tee -a $GITHUB_STEP_SUMMARY
+            echo "changed=" >> $GITHUB_OUTPUT
+          else
+            echo "🟠 Updated $formula" | tee -a $GITHUB_STEP_SUMMARY
+            git add $formula
+            cat $formula
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: commit changes
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          git config --global user.name 'Github Workflow'
+          git config --global user.email 'workflow@bot.github.com'
+          git commit -am "chore: update brew to ${{ steps.upstream.outputs.version }}"
+          git push
+
+          echo "✅ Changes committed" | tee -a $GITHUB_STEP_SUMMARY
