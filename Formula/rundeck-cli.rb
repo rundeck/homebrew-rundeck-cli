@@ -1,14 +1,15 @@
-# Documentation: https://docs.brew.sh/Formula-Cookbook
-#                https://rubydoc.brew.sh/Formula
-# PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
+require 'formula'
+
+VERSION = "2.0.8"
+SHA = "88474b6a265399c26bb9515a8c5a62863d50ef684c4a92f721f48d0a1de8482f"
+
 class RundeckCli < Formula
   desc "CLI tool for Rundeck"
   homepage "https://rundeck.github.io/rundeck-cli/"
-  url "https://github.com/rundeck/rundeck-cli/releases/download/v1.4.2/rd-cli-tool-shadow-1.4.2.zip"
-  sha256 "1d5f23d9a23bdb0213288a1a763065a7e251b100080c77929a1cdeede34c0e24"
+  url "https://github.com/rundeck/rundeck-cli/releases/download/v#{VERSION}/rd-cli-tool-shadow-#{VERSION}.zip"
+  sha256 SHA
+  version VERSION
   license "Apache-2.0"
-
-  depends_on :java => "1.8"
 
   def install
     rm_rf Dir["bin/*.bat"]
@@ -17,6 +18,6 @@ class RundeckCli < Formula
   end
 
   test do
-    system "#{bin}/rd --version"
+    assert_match "#{VERSION}", shell_output("#{bin}/rd --version")
   end
 end
