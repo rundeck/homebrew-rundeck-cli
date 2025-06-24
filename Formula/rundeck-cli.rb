@@ -1,7 +1,7 @@
 require 'formula'
 
-VERSION = "2.0.8"
-SHA = "88474b6a265399c26bb9515a8c5a62863d50ef684c4a92f721f48d0a1de8482f"
+VERSION = "2.0.9"
+SHA = "a7e3b39ec74a80b0fa6cc1ce2096fed9a486f946eafe4fd677897003acf4175b"
 
 class RundeckCli < Formula
   desc "CLI tool for Rundeck"
